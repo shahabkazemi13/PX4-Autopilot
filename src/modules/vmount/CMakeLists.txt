@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2015-2023 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2016 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -30,13 +30,21 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
-
 px4_add_module(
-	MODULE drivers__roboclaw
-	MAIN roboclaw
+	MODULE drivers__vmount
+	MAIN vmount
 	COMPILE_FLAGS
 	SRCS
-		Roboclaw.cpp
-	MODULE_CONFIG
-		module.yaml
+		input.cpp
+		input_mavlink.cpp
+		input_rc.cpp
+		input_test.cpp
+		output.cpp
+		output_mavlink.cpp
+		output_rc.cpp
+		vmount.cpp
+	DEPENDS
+		git_ecl
+		ecl_geo
 	)
+

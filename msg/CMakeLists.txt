@@ -172,6 +172,8 @@ set(msg_files
 	RcParameterMap.msg
 	RegisterExtComponentReply.msg
 	RegisterExtComponentRequest.msg
+	vehicle_vector_thrust_setpoint.msg
+	rls_wrench_estimator.msg
 	Rpm.msg
 	RtlStatus.msg
 	RtlTimeEstimate.msg

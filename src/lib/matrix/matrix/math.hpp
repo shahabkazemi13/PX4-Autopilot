@@ -1,5 +1,7 @@
 #pragma once
 
+#include <assert.h>
+#include <px4_platform_common/defines.h>
 #include "AxisAngle.hpp"
 #include "Dcm.hpp"
 #include "Dcm2.hpp"

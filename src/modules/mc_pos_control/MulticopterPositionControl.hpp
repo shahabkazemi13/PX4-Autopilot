@@ -65,6 +65,8 @@
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_local_position_setpoint.h>
+#include <uORB/topics/vehicle_vector_thrust_setpoint.h>
+#include <uORB/topics/rc_channels.h>
 
 using namespace time_literals;
 
@@ -96,16 +98,19 @@ private:
 	uORB::PublicationData<takeoff_status_s>              _takeoff_status_pub{ORB_ID(takeoff_status)};
 	uORB::Publication<vehicle_attitude_setpoint_s>	     _vehicle_attitude_setpoint_pub{ORB_ID(vehicle_attitude_setpoint)};
 	uORB::Publication<vehicle_local_position_setpoint_s> _local_pos_sp_pub{ORB_ID(vehicle_local_position_setpoint)};	/**< vehicle local position setpoint publication */
+        uORB::Publication<vehicle_vector_thrust_setpoint_s> _vt_sp_pub{ORB_ID(vehicle_vector_thrust_setpoint)};
 
 	uORB::SubscriptionCallbackWorkItem _local_pos_sub{this, ORB_ID(vehicle_local_position)};	/**< vehicle local position */
 
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
 	uORB::Subscription _hover_thrust_estimate_sub{ORB_ID(hover_thrust_estimate)};
-	uORB::Subscription _trajectory_setpoint_sub{ORB_ID(trajectory_setpoint)};
+	//uORB::Subscription _trajectory_setpoint_sub{ORB_ID(trajectory_setpoint)};
 	uORB::Subscription _vehicle_constraints_sub{ORB_ID(vehicle_constraints)};
 	uORB::Subscription _vehicle_control_mode_sub{ORB_ID(vehicle_control_mode)};
 	uORB::Subscription _vehicle_land_detected_sub{ORB_ID(vehicle_land_detected)};
+	uORB::Subscription _rc_channels_sub{ORB_ID(rc_channels)};
+	uORB::Subscription _admittance_setpoint_sub{ORB_ID(admittance_setpoint)};
 
 	hrt_abstime _time_stamp_last_loop{0};		/**< time stamp of last loop iteration */
 	hrt_abstime _time_position_control_enabled{0};
@@ -119,12 +124,15 @@ private:
 		.speed_down = NAN,
 		.want_takeoff = false,
 	};
+(ParamFloat<px4::params::MPC_XY_VEL_P_ACC>) _param_mpc_xy_vel_p_acc,
+	rc_channels_s _rc_channels{}; /**< PMEN RC channels*/
+	vehicle_vector_thrust_setpoint_s _vt_sp{};	/**< vehicle vector thrust setpoint */
 
 	vehicle_land_detected_s _vehicle_land_detected {
 		.timestamp = 0,
 		.freefall = false,
 		.ground_contact = true,
-		.maybe_landed = true,
+		.maybe_landed = true,(ParamFloat<px4::params::SYS_VEHICLE_RESP>) _param_sys_vehicle_resp,
 		.landed = true,
 	};
 
@@ -177,7 +185,10 @@ private:
 		(ParamFloat<px4::params::MPC_MAN_Y_TAU>)    _param_mpc_man_y_tau,
 
 		(ParamFloat<px4::params::MPC_XY_VEL_ALL>)   _param_mpc_xy_vel_all,
-		(ParamFloat<px4::params::MPC_Z_VEL_ALL>)    _param_mpc_z_vel_all,
+
+		(ParamInt<px4::params::MPC_VEC_THR_EN>) _param_mpc_vec_thr_en,  /**< enable vector thrust*/
+		(ParamFloat<px4::params::MPC_VEC_THR_SCL>) _param_mpc_vec_thr_scl,  /**< scaling for vector thrust mode */
+		(ParamFloat<px4::params::MPC_VEC_THR_ANG>) _param_mpc_vec_thr_ang /**< tilt angle for horizontal thrust */ /* PMEN */
 
 		(ParamFloat<px4::params::MPC_XY_ERR_MAX>) _param_mpc_xy_err_max,
 		(ParamFloat<px4::params::MPC_YAWRAUTO_MAX>) _param_mpc_yawrauto_max,

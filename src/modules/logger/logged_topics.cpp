@@ -321,6 +321,10 @@ void LoggedTopics::add_high_rate_topics()
 	add_topic("actuator_servos");
 	add_topic_multi("vehicle_thrust_setpoint", 0, 2);
 	add_topic_multi("vehicle_torque_setpoint", 0, 2);
+	add_topic("rls_wrench_estimator");
+	add_topic("admittance_setpoint");
+	add_topic("vehicle_vector_thrust_setpoint");
+	add_topic("debug_vect");
 }
 
 void LoggedTopics::add_debug_topics()
