@@ -57,6 +57,8 @@
 #include <uORB/SubscriptionCallback.hpp>
 #include <uORB/topics/actuator_outputs.h>
 #include <uORB/topics/parameter_update.h>
+#include <uORB/topics/trajectory_setpoint.h>
+
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/vehicle_local_position_setpoint.h>
 #include <uORB/topics/rls_wrench_estimator.h>

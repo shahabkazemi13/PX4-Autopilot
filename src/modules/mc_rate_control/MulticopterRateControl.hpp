@@ -165,7 +165,7 @@ private:
 		(ParamFloat<px4::params::MC_ACRO_SUPEXPOY>) _param_mc_acro_supexpoy,		/**< superexpo stick curve shape (yaw) */
 
 		(ParamBool<px4::params::MC_BAT_SCALE_EN>) _param_mc_bat_scale_en,
-		(ParamInt<px4::params::CBRK_RATE_CTRL>) _param_cbrk_rate_ctrl,
+		// (ParamInt<px4::params::CBRK_RATE_CTRL>) _param_cbrk_rate_ctrl,
 		(ParamFloat<px4::params::MPC_VEC_THR_XY_P>) _param_mpc_vec_thr_xy_p 		/**< gain for vector thrust XY direction. */
 	)
 };

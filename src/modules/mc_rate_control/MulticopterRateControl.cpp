@@ -227,6 +227,7 @@ MulticopterRateControl::Run()
 
 			control_vector_thrust();
 
+			actuator_controls_status_s actuators{};
 			//PMEN - hijacking INDEX_SPOILERS = 5
 			actuators.control[actuator_controls_s::INDEX_SPOILERS] = (PX4_ISFINITE(_vector_thrust_sp(0))) ? _vector_thrust_sp(0) : 0.0f;
 			 //PMEN - hijacking INDEX_AIRBRAKES = 6
