@@ -48,10 +48,12 @@ using namespace time_literals;
 
 // Returns whether the sensor is good
 int NAU7802::probe() {
+	_retries = 10;
 	uint8_t code;
 	int status = getRevisionCode(&code);
 	if (status != PX4_OK) return status;
 	// if (code != 0x0F) return PX4_ERROR;
+	_retries = 0;
 
 	return PX4_OK;
 }
@@ -184,7 +186,7 @@ int NAU7802::getRevisionCode(uint8_t *code) {
 	int status = getRegister(NAU7802_DEVICE_REV, code);
 	if (status != PX4_OK) return status;
 
-	// *code = (*code & 0xFF);
+	// *code = (*code & 0x0F);
 
   	return PX4_OK;
 }

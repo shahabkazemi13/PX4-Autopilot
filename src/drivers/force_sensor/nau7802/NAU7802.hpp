@@ -234,15 +234,17 @@ public:
 	void RunImpl();
 	void PublishMessage();
   int init();
-  int probe() override;
   void print_status() override;
 
 
 private:
 
+
+
 	// PX4 Specific ****************************************************
   float zeroOffset = 0.0;
 	float gainAdj = 0.001;
+  int probe() override;
 
 	// orb_advert_t 	_mavlink_log_pub {nullptr}; //log send to
 

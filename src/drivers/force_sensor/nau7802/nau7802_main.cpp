@@ -37,7 +37,6 @@
 
 extern "C" int nau7802_main(int argc, char *argv[])
 {
-	PX4_INFO("Running nau7802_main!");
 	using ThisDriver = NAU7802;
 	BusCLIArguments cli{true, false};
 	cli.i2c_address = I2C_ADDRESS_DEFAULT;
