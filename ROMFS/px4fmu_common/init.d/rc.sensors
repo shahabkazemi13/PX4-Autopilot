@@ -169,6 +169,12 @@ then
 	fi
 fi
 
+# NAU7802 external load cell amplifier
+if param compare -s SENS_EN_NAU7802 1
+then
+	nau7802 start -X -b 4
+fi
+
 ###############################################################################
 #                            End Optional drivers                             #
 ###############################################################################

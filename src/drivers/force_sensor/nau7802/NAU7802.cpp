@@ -52,6 +52,7 @@ NAU7802::NAU7802(I2CSPIBusOption bus_option, const int bus, int bus_frequency, i
 	ModuleParams(nullptr)
 {
 	updateParams();
+	_retries = 10;
 }
 
 
@@ -62,12 +63,10 @@ void NAU7802::updateParams() {
 }
 // Returns whether the sensor is good
 int NAU7802::probe() {
-	_retries = 10;
 	uint8_t code;
 	int status = getRevisionCode(&code);
 	if (status != PX4_OK) return status;
 	// if (code != 0x0F) return PX4_ERROR;
-	_retries = 0;
 
 	return PX4_OK;
 }
