@@ -252,7 +252,8 @@ private:
 
 
   DEFINE_PARAMETERS(
-    (ParamFloat<px4::params::SENS_NAU_GAIN>) _param_gain
+    (ParamFloat<px4::params::SENS_NAU_GAIN>) _param_gain,
+    (ParamFloat<px4::params::SENS_NAU_ZERO>) _param_offset
   )
 
 

@@ -58,6 +58,7 @@ NAU7802::NAU7802(I2CSPIBusOption bus_option, const int bus, int bus_frequency, i
 void NAU7802::updateParams() {
 	ModuleParams::updateParams();
 	gainAdj = _param_gain.get();
+	zeroOffset = _param_offset.get();
 }
 // Returns whether the sensor is good
 int NAU7802::probe() {
