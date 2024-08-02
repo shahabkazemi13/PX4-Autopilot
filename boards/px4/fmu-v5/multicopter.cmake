@@ -22,6 +22,7 @@ px4_add_board(
 		camera_trigger
 		distance_sensor # all available distance sensor drivers
 		dshot
+		force_sensor
 		gps
 		#heater
 		#imu # all available imu drivers

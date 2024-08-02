@@ -56,11 +56,16 @@
 #include <px4_platform_common/defines.h>
 #include <px4_platform_common/getopt.h>
 #include <px4_platform_common/module.h>
+#include <px4_platform_common/module_params.h>
+#include <px4_platform_common/param_macros.h>
 #include <px4_platform_common/i2c_spi_buses.h>
 
 #include <lib/systemlib/mavlink_log.h>
 #include <uORB/PublicationMulti.hpp>
+#include <uORB/Subscription.hpp>
+#include <uORB/SubscriptionInterval.hpp>
 #include <uORB/topics/force_sensor.h>
+#include <uORB/topics/parameter_update.h>
 
 
 //Register Map
@@ -221,13 +226,10 @@ static constexpr uint32_t I2C_SPEED = 100000; // 100 kHz I2C serial interface
 // using namespace time_literals;
 
 
-class NAU7802 : public device::I2C, public I2CSPIDriver<NAU7802> {
+class NAU7802 : public device::I2C, public I2CSPIDriver<NAU7802>, public ModuleParams{
 public:
-	// PX4 Specific ****************************************************
-	NAU7802(I2CSPIBusOption bus_option, const int bus, int bus_frequency, int address) :
-    I2C(0, "NAU7802", bus, address, bus_frequency),
-		I2CSPIDriver(MODULE_NAME, px4::device_bus_to_wq(get_device_id()), bus_option, bus, address)
-  {}
+	// PX4 Specific **************************************************************************************************************
+	NAU7802(I2CSPIBusOption bus_option, const int bus, int bus_frequency, int address);
 	virtual ~NAU7802() = default;
   static I2CSPIDriverBase *instantiate(const BusCLIArguments &cli, const BusInstanceIterator &iterator,int runtime_instance);
 	static void print_usage();
@@ -239,21 +241,24 @@ public:
 
 private:
 
-
-
-	// PX4 Specific ****************************************************
-  float zeroOffset = 0.0;
-	float gainAdj = 0.001;
+	// PX4 Specific **************************************************************************************************************
   int probe() override;
+  void updateParams() override;
 
 	// orb_advert_t 	_mavlink_log_pub {nullptr}; //log send to
-
 	uORB::PublicationMulti<force_sensor_s> _force_sensor_pub{ORB_ID(force_sensor)};
+  uORB::SubscriptionInterval  _parameter_update_sub{ORB_ID(parameter_update), 1}; // subscription limited to 1 Hz updates
 
-	// Sensor Specific ****************************************************
+  DEFINE_PARAMETERS(
+    (ParamFloat<px4::params::SENS_NAU_GAIN>) _param_gain
+  )
+
+
+	// Sensor Specific ***********************************************************************************************************
 
 	// Variables
-
+  float zeroOffset = 0.0;
+	float gainAdj = 0.001;
 	unsigned long _ldoRampDelay = 250;
 
 	// Functions

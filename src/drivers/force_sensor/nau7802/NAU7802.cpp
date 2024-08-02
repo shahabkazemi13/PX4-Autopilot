@@ -46,6 +46,19 @@ using namespace time_literals;
 
 // PX4 Specific ****************************************************
 
+NAU7802::NAU7802(I2CSPIBusOption bus_option, const int bus, int bus_frequency, int address) :
+	I2C(0, "NAU7802", bus, address, bus_frequency),
+	I2CSPIDriver(MODULE_NAME, px4::device_bus_to_wq(get_device_id()), bus_option, bus, address),
+	ModuleParams(nullptr)
+{
+	updateParams();
+}
+
+
+void NAU7802::updateParams() {
+	ModuleParams::updateParams();
+	gainAdj = _param_gain.get();
+}
 // Returns whether the sensor is good
 int NAU7802::probe() {
 	_retries = 10;
@@ -80,6 +93,14 @@ void NAU7802::RunImpl() {
 
 	// Take and publish sensor reading
 	PublishMessage();
+
+	// Check if parameters have changed
+	if (_parameter_update_sub.updated()) {
+		// clear update
+		parameter_update_s param_update;
+		_parameter_update_sub.copy(&param_update);
+		updateParams(); // update module parameters (in DEFINE_PARAMETERS)
+	}
 
 	// schedule a fresh cycle call when the measurement is done
 	ScheduleDelayed(CONVERSION_INTERVAL);

@@ -38,4 +38,15 @@
  * @group Sensors
  * @boolean
  */
-PARAM_DEFINE_INT32(SENS_EN_NAU7802, 0);
+PARAM_DEFINE_INT32(SENS_EN_NAU7802, 1);
+
+
+/**
+ * NAU7802 Force Sensor Gain
+ *
+ * @decimal 5
+ * @min 0.00001
+ * @max 10000.0
+ * @group Sensors
+ */
+PARAM_DEFINE_FLOAT(SENS_NAU_GAIN, 0.001);
