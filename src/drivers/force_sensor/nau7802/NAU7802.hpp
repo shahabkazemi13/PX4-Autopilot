@@ -66,6 +66,7 @@
 #include <uORB/SubscriptionInterval.hpp>
 #include <uORB/topics/force_sensor.h>
 #include <uORB/topics/parameter_update.h>
+#include <uORB/topics/debug_key_value.h>
 
 
 //Register Map
@@ -244,10 +245,11 @@ private:
 	// PX4 Specific **************************************************************************************************************
   int probe() override;
   void updateParams() override;
-
-	// orb_advert_t 	_mavlink_log_pub {nullptr}; //log send to
+  debug_key_value_s mav_debug_msg{0,0.0,"FORCE_MEA",0};
+  orb_advert_t pub_mav = orb_advertise(ORB_ID(debug_key_value), &mav_debug_msg);
 	uORB::PublicationMulti<force_sensor_s> _force_sensor_pub{ORB_ID(force_sensor)};
   uORB::SubscriptionInterval  _parameter_update_sub{ORB_ID(parameter_update), 1}; // subscription limited to 1 Hz updates
+
 
   DEFINE_PARAMETERS(
     (ParamFloat<px4::params::SENS_NAU_GAIN>) _param_gain

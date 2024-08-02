@@ -122,6 +122,9 @@ void NAU7802::PublishMessage() {
 
 	_force_sensor_pub.publish(force_msg);
 
+	mav_debug_msg.value = force_n;
+	orb_publish(ORB_ID(debug_key_value), pub_mav, &mav_debug_msg);
+
 }
 
 
