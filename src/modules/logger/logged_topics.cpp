@@ -61,7 +61,6 @@ void LoggedTopics::add_default_topics()
 	add_topic("commander_state");
 	add_topic("cpuload");
 	add_topic("esc_status", 250);
-	add_topic("force_sensor");
 	add_topic("follow_target", 500);
 	add_topic("generator_status");
 	add_topic("heater_status");
@@ -209,6 +208,7 @@ void LoggedTopics::add_high_rate_topics()
 	add_topic("admittance_setpoint");
 	add_topic("vehicle_vector_thrust_setpoint");
 	add_topic("debug_vect");
+	add_topic("force_sensor");
 }
 
 void LoggedTopics::add_debug_topics()

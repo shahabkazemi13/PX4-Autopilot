@@ -45,18 +45,18 @@ PARAM_DEFINE_INT32(SENS_EN_NAU7802, 1);
  * NAU7802 Force Sensor Gain
  *
  * @decimal 5
- * @min 0.00001
- * @max 10000.0
+ * @min 0.00000001
+ * @max 10000000.0
  * @group Sensors
  */
-PARAM_DEFINE_FLOAT(SENS_NAU_GAIN, 0.001);
+PARAM_DEFINE_FLOAT(SENS_NAU_GAIN, 11927.02);
 
 /**
  * NAU7802 Force Sensor Offset
  *
  * @decimal 5
- * @min -10000
- * @max 10000
+ * @min -10000000
+ * @max 10000000
  * @group Sensors
  */
-PARAM_DEFINE_FLOAT(SENS_NAU_ZERO, 0.0);
+PARAM_DEFINE_FLOAT(SENS_NAU_ZERO, 1936219);
