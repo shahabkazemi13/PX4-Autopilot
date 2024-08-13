@@ -208,10 +208,10 @@ void AdmittanceControlModule::Run()
 		We(2) = math::constrain(((fabsf(wrench.fe[2]) > _param_adm_ctr_dzz.get()) ? (wrench.fe[2]) : (0.f)), -_param_adm_ctr_saz.get(), _param_adm_ctr_saz.get());
 		We(3) = math::constrain(((fabsf(wrench.me[2]) > _param_adm_ctr_dzw.get()) ? (wrench.me[2]) : (0.f)), -_param_adm_ctr_saw.get(), _param_adm_ctr_saw.get());
 		if (_force_source_mix == ForceSourceMix::MIXED) {
-			We(0) = math::constrain(((fabsf(force.force_measurement_n) > _param_adm_ctr_dzx.get()) ? (force.force_measurement_n) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
+			We(1) = math::constrain(((fabsf(force.force_measurement_n) > _param_adm_ctr_dzx.get()) ? (force.force_measurement_n) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
 		} else if (_force_source_mix == ForceSourceMix::MEASUREMENT) {
-			We(0) = math::constrain(((fabsf(force.force_measurement_n) > _param_adm_ctr_dzx.get()) ? (force.force_measurement_n) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
-			We(1) = 0;
+			We(0) = 0;
+			We(1) = math::constrain(((fabsf(force.force_measurement_n) > _param_adm_ctr_dzx.get()) ? (force.force_measurement_n) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
 			We(2) = 0;
 			We(3) = 0;
 		}
