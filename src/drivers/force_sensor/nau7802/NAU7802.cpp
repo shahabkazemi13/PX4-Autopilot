@@ -60,6 +60,9 @@ void NAU7802::updateParams() {
 	ModuleParams::updateParams();
 	gainAdj = _param_gain.get();
 	zeroOffset = _param_offset.get();
+	measurement_rate_hz = _param_meas_rate.get();
+	_lpf.set_cutoff_frequency(measurement_rate_hz, _param_cutoff_freq.get());
+
 }
 // Returns whether the sensor is good
 int NAU7802::probe() {
@@ -103,7 +106,7 @@ void NAU7802::RunImpl() {
 	}
 
 	// schedule a fresh cycle call when the measurement is done
-	ScheduleDelayed(CONVERSION_INTERVAL);
+	ScheduleDelayed((1000000.0f / measurement_rate_hz));
 }
 
 // Generates and publishes a UORB message by taking a reading
@@ -113,7 +116,7 @@ void NAU7802::PublishMessage() {
 	int32_t reading = 0;
 	int error = getReading(&reading);
 
-	float force_n = reading/128.0f*gainAdj+zeroOffset;
+	float force_n = _lpf.apply(reading/128.0f*gainAdj+zeroOffset);
 
 	force_sensor_s force_msg{};
 	force_msg.timestamp = timestamp;

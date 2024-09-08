@@ -68,6 +68,8 @@
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/debug_key_value.h>
 
+#include <mathlib/math/filter/LowPassFilter2p.hpp>
+
 
 //Register Map
 typedef enum
@@ -214,12 +216,6 @@ typedef enum
 } NAU7802_Cal_Mode;
 
 
-
-/* Measurement rate is 200Hz */
-#define MEAS_RATE 200
-#define CONVERSION_INTERVAL	(1000000 / MEAS_RATE)	/* microseconds */
-
-
 /* Configuration Constants */
 static constexpr uint8_t I2C_ADDRESS_DEFAULT = 0x2A; /* 0x2A */
 static constexpr uint32_t I2C_SPEED = 100000; // 100 kHz I2C serial interface
@@ -250,10 +246,16 @@ private:
 	uORB::PublicationMulti<force_sensor_s> _force_sensor_pub{ORB_ID(force_sensor)};
   uORB::SubscriptionInterval  _parameter_update_sub{ORB_ID(parameter_update), 1}; // subscription limited to 1 Hz updates
 
+  float measurement_rate_hz = 200;
+  math::LowPassFilter2p<float> _lpf{200, 10.f};
+
+
 
   DEFINE_PARAMETERS(
     (ParamFloat<px4::params::SENS_NAU_GAIN>) _param_gain,
-    (ParamFloat<px4::params::SENS_NAU_ZERO>) _param_offset
+    (ParamFloat<px4::params::SENS_NAU_ZERO>) _param_offset,
+    (ParamFloat<px4::params::SENS_NAU_RATE>) _param_meas_rate,
+    (ParamFloat<px4::params::SENS_NAU_CTFREQ>) _param_cutoff_freq
   )
 
 

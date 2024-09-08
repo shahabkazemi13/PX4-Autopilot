@@ -45,18 +45,41 @@ PARAM_DEFINE_INT32(SENS_EN_NAU7802, 1);
  * NAU7802 Force Sensor Gain
  *
  * @decimal 5
- * @min 0.00000001
- * @max 10000000.0
+ * @min 0.00000000001
+ * @max 10000000000.0
  * @group Sensors
  */
-PARAM_DEFINE_FLOAT(SENS_NAU_GAIN, 11927.02);
+PARAM_DEFINE_FLOAT(SENS_NAU_GAIN, 1.0f);
 
 /**
  * NAU7802 Force Sensor Offset
  *
  * @decimal 5
- * @min -10000000
- * @max 10000000
+ * @min -10000000000
+ * @max 10000000000
  * @group Sensors
  */
-PARAM_DEFINE_FLOAT(SENS_NAU_ZERO, 1936219);
+PARAM_DEFINE_FLOAT(SENS_NAU_ZERO, 0.0f);
+
+/**
+ * NAU7802 Force Sensor Low Pass Cut Off Frequency
+ *
+ * @decimal 5
+ * @min 1
+ * @max 200
+ * @group Sensors
+ * @unit Hz
+ */
+PARAM_DEFINE_FLOAT(SENS_NAU_CTFREQ, 10.0f);
+
+
+/**
+ * NAU7802 Force Sensor Sample Rate
+ *
+ * @decimal 5
+ * @min 1
+ * @max 500
+ * @group Sensors
+ * @unit Hz
+ */
+PARAM_DEFINE_FLOAT(SENS_NAU_RATE, 200.0f);
