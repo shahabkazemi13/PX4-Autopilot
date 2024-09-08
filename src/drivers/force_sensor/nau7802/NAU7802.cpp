@@ -139,7 +139,7 @@ int NAU7802::begin() {
 		if (status != PX4_OK) return status;
 	status = setLDO(NAU7802_LDO_3V3); //Set LDO to 3.3;
 		if (status != PX4_OK) return status;
-	status = setGain(NAU7802_GAIN_128); //Set gain to 12;
+	status = setGain(NAU7802_GAIN_64); //Set gain to 32;
 		if (status != PX4_OK) return status;
 	status = setSampleRate(NAU7802_SPS_80); //Set samples per second to 8;
 		if (status != PX4_OK) return status;
