@@ -172,11 +172,13 @@ void AdmittanceControlModule::Run()
 	_finite = copyAndCheckAllFinite(wrench, force, actuator_outputs, v_att_sp, setpoint);
 
 
-	float dt = (wrench.timestamp - _timestamp_last) * 1e-6f;
-	_timestamp_last = wrench.timestamp;
+	float dt = 0;
 	if (_force_source_mix == ForceSourceMix::MEASUREMENT) {
 		dt = (force.timestamp - _timestamp_last) * 1e-6f;
 		_timestamp_last = force.timestamp;
+	} else {
+		dt = (wrench.timestamp - _timestamp_last) * 1e-6f;
+		_timestamp_last = wrench.timestamp;
 	}
 
 
@@ -201,17 +203,28 @@ void AdmittanceControlModule::Run()
 	if (_finite && _admittance_flag && (dt > 0.001f) && (dt < 1.f)) {
 
 		Vector<float, 4> We = zeros<float, 4, 1>();
-
+		Vector<float, 4> est = zeros<float, 4, 1>();
+		float meas = 0;
 		// //Saturate and Deadzone
-		We(0) = math::constrain(((fabsf(wrench.fe[0]) > _param_adm_ctr_dzx.get()) ? (wrench.fe[0]) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
-		We(1) = math::constrain(((fabsf(wrench.fe[1]) > _param_adm_ctr_dzy.get()) ? (wrench.fe[1]) : (0.f)), -_param_adm_ctr_say.get(), _param_adm_ctr_say.get());
-		We(2) = math::constrain(((fabsf(wrench.fe[2]) > _param_adm_ctr_dzz.get()) ? (wrench.fe[2]) : (0.f)), -_param_adm_ctr_saz.get(), _param_adm_ctr_saz.get());
-		We(3) = math::constrain(((fabsf(wrench.me[2]) > _param_adm_ctr_dzw.get()) ? (wrench.me[2]) : (0.f)), -_param_adm_ctr_saw.get(), _param_adm_ctr_saw.get());
-		if (_force_source_mix == ForceSourceMix::MIXED) {
-			We(1) = math::constrain(((fabsf(force.force_measurement_n) > _param_adm_ctr_dzx.get()) ? (force.force_measurement_n) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
+		est(0) = math::constrain(((fabsf(wrench.fe[0]) > _param_adm_ctr_dzx.get()) ? (wrench.fe[0]) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
+		est(1) = math::constrain(((fabsf(wrench.fe[1]) > _param_adm_ctr_dzy.get()) ? (wrench.fe[1]) : (0.f)), -_param_adm_ctr_say.get(), _param_adm_ctr_say.get());
+		est(2) = math::constrain(((fabsf(wrench.fe[2]) > _param_adm_ctr_dzz.get()) ? (wrench.fe[2]) : (0.f)), -_param_adm_ctr_saz.get(), _param_adm_ctr_saz.get());
+		est(3) = math::constrain(((fabsf(wrench.me[2]) > _param_adm_ctr_dzw.get()) ? (wrench.me[2]) : (0.f)), -_param_adm_ctr_saw.get(), _param_adm_ctr_saw.get());
+		meas = math::constrain(((fabsf(force.force_measurement_n) > _param_adm_ctr_dzx.get()) ? (force.force_measurement_n) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
+
+		if (_force_source_mix == ForceSourceMix::ESTIMATOR) {
+			We(0) = est(0);
+			We(1) = est(1);
+			We(2) = est(2);
+			We(3) = est(3);
+		} else if (_force_source_mix == ForceSourceMix::MIXED) {
+			We(0) = meas;
+			We(1) = est(1);
+			We(2) = est(2);
+			We(3) = est(3);
 		} else if (_force_source_mix == ForceSourceMix::MEASUREMENT) {
-			We(0) = 0;
-			We(1) = math::constrain(((fabsf(force.force_measurement_n) > _param_adm_ctr_dzx.get()) ? (force.force_measurement_n) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
+			We(0) = meas;
+			We(1) = 0;
 			We(2) = 0;
 			We(3) = 0;
 		}
