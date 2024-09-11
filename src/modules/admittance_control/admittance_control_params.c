@@ -466,6 +466,7 @@ PARAM_DEFINE_FLOAT(ADM_CTR_WRE_SAW, 0.5f);
  * @value 0 Wrench Estimator Only
  * @value 1 Mixed Wrench Estimator and Force Measurements
  * @value 2 Force Measurements Only
+ * @value 3 No Inputs
  *
  * @reboot_required true
  * @group Admittance Control

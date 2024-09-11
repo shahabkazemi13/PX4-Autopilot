@@ -116,12 +116,14 @@ void NAU7802::PublishMessage() {
 	int32_t reading = 0;
 	int error = getReading(&reading);
 
-	float force_n = _lpf.apply(reading/128.0f*gainAdj+zeroOffset);
+	float force_n = reading/128.0f*gainAdj+zeroOffset;
+	float force_n_filtered = _lpf.apply(force_n);
 
 	force_sensor_s force_msg{};
 	force_msg.timestamp = timestamp;
 	force_msg.error_status = error;
 	force_msg.force_measurement_n = force_n;
+	force_msg.force_filtered_n = force_n_filtered;
 
 	_force_sensor_pub.publish(force_msg);
 

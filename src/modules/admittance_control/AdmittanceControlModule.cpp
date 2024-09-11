@@ -210,7 +210,7 @@ void AdmittanceControlModule::Run()
 		est(1) = math::constrain(((fabsf(wrench.fe[1]) > _param_adm_ctr_dzy.get()) ? (wrench.fe[1]) : (0.f)), -_param_adm_ctr_say.get(), _param_adm_ctr_say.get());
 		est(2) = math::constrain(((fabsf(wrench.fe[2]) > _param_adm_ctr_dzz.get()) ? (wrench.fe[2]) : (0.f)), -_param_adm_ctr_saz.get(), _param_adm_ctr_saz.get());
 		est(3) = math::constrain(((fabsf(wrench.me[2]) > _param_adm_ctr_dzw.get()) ? (wrench.me[2]) : (0.f)), -_param_adm_ctr_saw.get(), _param_adm_ctr_saw.get());
-		meas = math::constrain(((fabsf(force.force_measurement_n) > _param_adm_ctr_dzx.get()) ? (force.force_measurement_n) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
+		meas = -math::constrain(((fabsf(force.force_filtered_n) > _param_adm_ctr_dzx.get()) ? (force.force_filtered_n) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
 
 		if (_force_source_mix == ForceSourceMix::ESTIMATOR) {
 			We(0) = est(0);
@@ -224,6 +224,11 @@ void AdmittanceControlModule::Run()
 			We(3) = est(3);
 		} else if (_force_source_mix == ForceSourceMix::MEASUREMENT) {
 			We(0) = meas;
+			We(1) = 0;
+			We(2) = 0;
+			We(3) = 0;
+		} else if (_force_source_mix == ForceSourceMix::NONE) {
+			We(0) = 0;
 			We(1) = 0;
 			We(2) = 0;
 			We(3) = 0;
@@ -288,7 +293,7 @@ bool AdmittanceControlModule::copyAndCheckAllFinite(rls_wrench_estimator_s &wren
 
 	_force_measurement_sub.copy(&force);
 
-	if (!(PX4_ISFINITE(force.force_measurement_n))) {
+	if (!(PX4_ISFINITE(force.force_filtered_n))) {
 		return false;
 	}
 

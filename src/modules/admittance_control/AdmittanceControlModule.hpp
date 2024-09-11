@@ -68,7 +68,8 @@ using namespace time_literals;
 enum ForceSourceMix {
 	ESTIMATOR = 0,
 	MIXED = 1,
-	MEASUREMENT = 2
+	MEASUREMENT = 2,
+	NONE = 3,
 };
 
 class AdmittanceControlModule : public ModuleBase<AdmittanceControlModule>, public ModuleParams, public px4::ScheduledWorkItem
