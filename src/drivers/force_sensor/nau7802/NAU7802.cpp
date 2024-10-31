@@ -35,6 +35,10 @@
 
 /**
  * @file NAU7802.cpp
+ * @brief Driver for the NAU7802 load cell amplifier with I2C communication.
+ *
+ * This driver configures, initializes, and manages NAU7802 settings and readings,
+ * periodically publishing force measurements via PX4 uORB messaging.
  *
  * @author Agustin Soto and Oliver Vannoort
  */
@@ -51,11 +55,13 @@ NAU7802::NAU7802(I2CSPIBusOption bus_option, const int bus, int bus_frequency, i
 	I2CSPIDriver(MODULE_NAME, px4::device_bus_to_wq(get_device_id()), bus_option, bus, address),
 	ModuleParams(nullptr)
 {
-	updateParams();
-	_retries = 10;
+	updateParams(); // Initialize parameters
+    	_retries = 10;  // Set retry count for I2C transfers
 }
 
-
+/**
+ * @brief Update parameters from PX4 parameters.
+ */
 void NAU7802::updateParams() {
 	ModuleParams::updateParams();
 	gainAdj = _param_gain.get();
@@ -64,19 +70,26 @@ void NAU7802::updateParams() {
 	_lpf.set_cutoff_frequency(measurement_rate_hz, _param_cutoff_freq.get());
 
 }
-// Returns whether the sensor is good
+
+/**
+ * @brief Probe function to check sensor connectivity.
+ *
+ * @return PX4_OK if probe is successful, otherwise an error code.
+ */
 int NAU7802::probe() {
 	uint8_t code;
 	int status = getRevisionCode(&code);
 	if (status != PX4_OK) return status;
-	// if (code != 0x0F) return PX4_ERROR;
 
 	return PX4_OK;
 }
 
-// Initalises the Sensor
+/**
+ * @brief Initialize the sensor and configure it.
+ *
+ * @return PX4_OK if initialization succeeds, otherwise an error code.
+ */
 int NAU7802::init() {
-	PX4_WARN("NAU7802 Initalising!");
 	int status = I2C::init();
 	if (status != PX4_OK) return status;
 	status = begin();
@@ -86,12 +99,16 @@ int NAU7802::init() {
 	return PX4_OK;
 }
 
-// Prints the current status of the I2C connection
+/**
+ * @brief Print status of the I2C connection.
+ */
 void NAU7802::print_status() {
 	I2CSPIDriverBase::print_status();
 }
 
-// Runs a sensor reading and reschedules itself to run repeatedly
+/**
+ * @brief Periodic function to schedule sensor readings and parameter updates.
+ */
 void NAU7802::RunImpl() {
 
 	// Take and publish sensor reading
@@ -109,24 +126,28 @@ void NAU7802::RunImpl() {
 	ScheduleDelayed((1000000.0f / measurement_rate_hz));
 }
 
-// Generates and publishes a UORB message by taking a reading
+/**
+ * @brief Publish a force sensor message to uORB.
+ */
 void NAU7802::PublishMessage() {
-
+	// Gets the time and takes a reading
 	const hrt_abstime timestamp = hrt_absolute_time();
 	int32_t reading = 0;
 	int error = getReading(&reading);
 
+	// Applies the gain, offset and low-pass filter
 	float force_n = reading/128.0f*gainAdj+zeroOffset;
 	float force_n_filtered = _lpf.apply(force_n);
 
+	// Stores the values in a force message and publishes it
 	force_sensor_s force_msg{};
 	force_msg.timestamp = timestamp;
 	force_msg.error_status = error;
 	force_msg.force_measurement_n = force_n;
 	force_msg.force_filtered_n = force_n_filtered;
-
 	_force_sensor_pub.publish(force_msg);
 
+	// Publishes the force measurement to the mavlink debug vector
 	mav_debug_msg.value = force_n;
 	orb_publish(ORB_ID(debug_key_value), pub_mav, &mav_debug_msg);
 
@@ -135,7 +156,11 @@ void NAU7802::PublishMessage() {
 
 // Sensor Specific ****************************************************
 
-// Initalises and sets up the sensor, returns true if initalised correctly
+/**
+ * @brief Initialise the sensor with appropriate configurations.
+ *
+ * @return PX4_OK if initialisation succeeds, otherwise an error code.
+ */
 int NAU7802::begin() {
 	int status = PX4_OK;
 	status = reset(); //Reset all register;
@@ -161,45 +186,45 @@ int NAU7802::begin() {
 
 	usleep(_ldoRampDelay * 1000); // Wait for LDO to stabilize - takes about 200ms
 
-	// getReading(nullptr); // Take ten readings to flush - Not working in PX4
-	// getReading(nullptr);
-	// getReading(nullptr);
-	// getReading(nullptr);
-	// getReading(nullptr);
-	// getReading(nullptr);
-	// getReading(nullptr);
-	// getReading(nullptr);
-	// getReading(nullptr);
-
 	status = calibrateAFE(); //Re-cal analog front end when we change gain, sample rate, or channe;
 		if (status != PX4_OK) return status;
 
 	return status;
 }
 
+/**
+ * @brief Reset sensor by toggling reset bits.
+ *
+ * @return PX4_OK if reset succeeds, otherwise an error code.
+ */
 int NAU7802::reset() {
-	int status = setBit(NAU7802_PU_CTRL_RR, NAU7802_PU_CTRL);  //Set R
+	int status = setBit(NAU7802_PU_CTRL_RR, NAU7802_PU_CTRL);  //Set Reset bit
 		if (status != PX4_OK) return status;
 
 	px4_usleep(1000);
 
-	status = clearBit(NAU7802_PU_CTRL_RR, NAU7802_PU_CTRL);  //Clear RR to leave reset stat
+	status = clearBit(NAU7802_PU_CTRL_RR, NAU7802_PU_CTRL);  //Clear Reset bit to leave reset state
 		if (status != PX4_OK) return status;
 
   	return PX4_OK;
 }
 
+/**
+ * @brief Power up sensor by setting control bits.
+ *
+ * @return PX4_OK if power-up succeeds, otherwise an error code.
+ */
 int NAU7802::powerUp() {
-	int status = setBit(NAU7802_PU_CTRL_PUD, NAU7802_PU_CTRL);
+	int status = setBit(NAU7802_PU_CTRL_PUD, NAU7802_PU_CTRL); // Enable digital power
 	if (status != PX4_OK) return status;
-	status = setBit(NAU7802_PU_CTRL_PUA, NAU7802_PU_CTRL);
+	status = setBit(NAU7802_PU_CTRL_PUA, NAU7802_PU_CTRL); // Enable analog power
 	if (status != PX4_OK) return status;
 
 	//Wait for Power Up bit to be set - takes approximately 200us
 	int counter = 0;
 	bool bit = false;
 	while (bit == false) {
-		status = getBit(NAU7802_PU_CTRL_PUR, NAU7802_PU_CTRL, &bit);
+		status = getBit(NAU7802_PU_CTRL_PUR, NAU7802_PU_CTRL, &bit); // Check power-up readiness
 		if (status != PX4_OK) return status;
 		px4_usleep(1000);
 		if (counter++ > 100)
@@ -211,6 +236,12 @@ int NAU7802::powerUp() {
 	return PX4_OK;
 }
 
+/**
+ * @brief Retrieves device revision code.
+ *
+ * @param code - Output pointer to store the device code.
+ * @return PX4_OK if retrieval succeeds, otherwise an error code.
+ */
 int NAU7802::getRevisionCode(uint8_t *code) {
 	int status = getRegister(NAU7802_DEVICE_REV, code);
 	if (status != PX4_OK) return status;
@@ -220,6 +251,12 @@ int NAU7802::getRevisionCode(uint8_t *code) {
   	return PX4_OK;
 }
 
+/**
+ * @brief Configure gain value for amplifier.
+ *
+ * @param gainValue - Gain setting for the sensor.
+ * @return PX4_OK if gain setting succeeds, otherwise an error code.
+ */
 int NAU7802::setGain(uint8_t gainValue) {
 	if (gainValue > 0b111)
     		gainValue = 0b111; //Error check
@@ -237,67 +274,95 @@ int NAU7802::setGain(uint8_t gainValue) {
 	return PX4_OK;
 }
 
+/**
+ * @brief Set Low Dropout (LDO) voltage regulator value.
+ *
+ * @param ldoValue - Desired LDO voltage setting (0b000 to 0b111).
+ * @return PX4_OK if LDO setting succeeds, otherwise an error code.
+ */
 int NAU7802::setLDO(uint8_t ldoValue) {
 	if (ldoValue > 0b111)
-    		ldoValue = 0b111; //Error check
+    		ldoValue = 0b111;  // Error check to limit max value
 
-	//Set the value of the LDO
 	uint8_t reg;
-	int status = getRegister(NAU7802_CTRL1, &reg);
+	int status = getRegister(NAU7802_CTRL1, &reg); // Retrieve current register setting
 	if (status != PX4_OK) return status;
 
-	reg &= 0b11000111;    //Clear LDO bits
-	reg |= ldoValue << 3; //Mask in new LDO bits
+	reg &= 0b11000111;    // Clear LDO bits
+	reg |= ldoValue << 3; // Mask in new LDO bits
 
 
-	status = setRegister(NAU7802_CTRL1, reg);
+	status = setRegister(NAU7802_CTRL1, reg); // Apply updated LDO configuration
 	if (status != PX4_OK) return status;
-	status = setBit(NAU7802_PU_CTRL_AVDDS, NAU7802_PU_CTRL);
+	status = setBit(NAU7802_PU_CTRL_AVDDS, NAU7802_PU_CTRL); // Enable LDO control
 	if (status != PX4_OK) return status;
 
 	return PX4_OK;
 }
 
+/**
+ * @brief Set sample rate for ADC conversions.
+ *
+ * @param rate - Desired sample rate (0b000 to 0b111).
+ * @return PX4_OK if sample rate setting succeeds, otherwise an error code.
+ */
 int NAU7802::setSampleRate(uint8_t rate) {
 	 if (rate > 0b111)
    		 rate = 0b111; //Error check
 
 	uint8_t reg;
-	int status = getRegister(NAU7802_CTRL2, &reg);
+	int status = getRegister(NAU7802_CTRL2, &reg); // Retrieve current register setting
 	if (status != PX4_OK) return status;
 
 	reg &= 0b10001111; //Clear CRS bits
 	reg |= rate << 4;  //Mask in new CRS bits
 
-	status = setRegister(NAU7802_CTRL2, reg);
+	status = setRegister(NAU7802_CTRL2, reg); // Apply new sample rate bits
 	if (status != PX4_OK) return status;
 
 	return PX4_OK;
 }
 
 
+/**
+ * @brief Retrieve 24-bit reading from sensor's ADC.
+ *
+ * @param reading - Output pointer to store ADC reading.
+ * @return PX4_OK if read operation succeeds, otherwise an error code.
+ */
 int NAU7802::getReading(int32_t *reading) {
 	int32_t val = 0;
-	int status = get24BitRegister(NAU7802_ADCO_B2, &val);
+	int status = get24BitRegister(NAU7802_ADCO_B2, &val); // Retrieve ADC value
 	if (status != PX4_OK) return status;
 
-	*reading = val;
+	*reading = val; // Store retrieved value
 	return PX4_OK;
 
 }
 
-
+/**
+ * @brief Calibrate the sensor's analog front end.
+ *
+ * @param mode - Calibration mode.
+ * @return PX4_OK if calibration succeeds, otherwise an error code.
+ */
 int NAU7802::calibrateAFE(NAU7802_Cal_Mode mode) {
 	int status = beginCalibrateAFE(NAU7802_CALMOD_INTERNAL);
 	if (status != PX4_OK) return status;
-	status = waitForCalibrateAFE(1000);
+	status = waitForCalibrateAFE(1000); // Wait for calibration to complete
 	if (status != PX4_OK) return status;
   	return PX4_OK;
 }
 
+/**
+ * @brief Begin calibration process on sensor's analog front end.
+ *
+ * @param mode - Calibration mode (e.g., internal or external).
+ * @return PX4_OK if calibration initiation succeeds, otherwise an error code.
+ */
 int NAU7802::beginCalibrateAFE(NAU7802_Cal_Mode mode) {
 	uint8_t reg;
-	int status = getRegister(NAU7802_CTRL2, &reg);
+	int status = getRegister(NAU7802_CTRL2, &reg); // Retrieve current control register setting
 	if (status != PX4_OK) return status;
 
 	reg &= 0xFC; // Clear CALMOD bits
@@ -305,27 +370,36 @@ int NAU7802::beginCalibrateAFE(NAU7802_Cal_Mode mode) {
   	calMode &= 0x03; // Limit mode to 2 bits
   	reg |= calMode; // Set the mode
 
-	status = setRegister(NAU7802_CTRL2, reg);
+	status = setRegister(NAU7802_CTRL2, reg); // Apply calibration mode
 	if (status != PX4_OK) return status;
 
-	status = setBit(NAU7802_CTRL2_CALS, NAU7802_CTRL2);
+	status = setBit(NAU7802_CTRL2_CALS, NAU7802_CTRL2); // Start calibration sequence
 	if (status != PX4_OK) return status;
 
   	return PX4_OK;
 }
 
+
+/**
+ * @brief Wait for calibration completion within a specified timeout.
+ *
+ * @param timeout_ms - Maximum wait time in milliseconds.
+ * @return PX4_OK if calibration completes successfully, otherwise an error code.
+ */
 int NAU7802::waitForCalibrateAFE(unsigned long timeout_ms) {
 
 	uint64_t startTime = hrt_absolute_time()/1000;
 	NAU7802_Cal_Status cal_ready = calAFEStatus();
 
-	while (cal_ready == NAU7802_CAL_IN_PROGRESS) {
+	while (cal_ready == NAU7802_CAL_IN_PROGRESS) { // Wait while calibration is in progress
 		if ((timeout_ms > 0) && (((hrt_absolute_time()/1000) - startTime) > timeout_ms)) {
-			break;
+			break; // Exit if timeout is reached
 		}
 		px4_usleep(1000);
 		cal_ready = calAFEStatus();
 	}
+
+	// Check if calibration completed successfully
 	if (cal_ready == NAU7802_CAL_PX4_ERROR) {
 		return PX4_ERROR;
 	}
@@ -335,15 +409,20 @@ int NAU7802::waitForCalibrateAFE(unsigned long timeout_ms) {
 	return PX4_OK;
 }
 
+/**
+ * @brief Retrieve calibration status.
+ *
+ * @return Calibration status (in-progress, success, or error).
+ */
 NAU7802_Cal_Status NAU7802::calAFEStatus() {
 	bool bit;
 
-	int status = getBit(NAU7802_CTRL2_CALS, NAU7802_CTRL2, &bit);
+	int status = getBit(NAU7802_CTRL2_CALS, NAU7802_CTRL2, &bit); // Check calibration status bit
 	if (status != PX4_OK) return NAU7802_CAL_PX4_ERROR;
 
 	if (bit) return NAU7802_CAL_IN_PROGRESS;
 
-	status = getBit(NAU7802_CTRL2_CAL_ERROR, NAU7802_CTRL2, &bit);
+	status = getBit(NAU7802_CTRL2_CAL_ERROR, NAU7802_CTRL2, &bit); // Check for calibration error
 	if (status != PX4_OK) return NAU7802_CAL_PX4_ERROR;
 
 	if (bit) return NAU7802_CAL_FAILURE;
@@ -353,6 +432,13 @@ NAU7802_Cal_Status NAU7802::calAFEStatus() {
 }
 
 
+/**
+ * @brief Retrieve an 8-bit register value.
+ *
+ * @param registerAddress - Address of register to read.
+ * @param data - Output pointer for register data.
+ * @return PX4_OK if read operation succeeds, otherwise an error code.
+ */
 int NAU7802::getRegister(uint8_t registerAddress, uint8_t *data) {
 	// // PX4 Transfer Function
 	// // I2C::transfer(const uint8_t *send, const unsigned send_len, uint8_t *recv, const unsigned recv_len)
@@ -372,6 +458,13 @@ int NAU7802::getRegister(uint8_t registerAddress, uint8_t *data) {
 	return PX4_OK;
 }
 
+/**
+ * @brief Set an 8-bit register value.
+ *
+ * @param registerAddress - Address of register to write.
+ * @param value - Value to write.
+ * @return PX4_OK if write operation succeeds, otherwise an error code.
+ */
 int NAU7802::setRegister(uint8_t registerAddress, uint8_t value) {
 	// Send the two byte command and return success
 	uint8_t cmd[2];
@@ -384,9 +477,14 @@ int NAU7802::setRegister(uint8_t registerAddress, uint8_t value) {
 	return PX4_OK;
 }
 
+/**
+ * @brief Retrieve a 24-bit register value.
+ *
+ * @param registerAddress - Address of register to read.
+ * @param data - Output pointer for register data.
+ * @return PX4_OK if read operation succeeds, otherwise an error code.
+ */
 int NAU7802::get24BitRegister(uint8_t registerAddress, int32_t *data) {
-	// PX4 Transfer Function
-	// I2C::transfer(const uint8_t *send, const unsigned send_len, uint8_t *recv, const unsigned recv_len)
 
 	// Send the 1 byte command and record the 3 byte response
 	uint8_t val[3] = {0,0,0};
@@ -413,6 +511,13 @@ int NAU7802::get24BitRegister(uint8_t registerAddress, int32_t *data) {
 
 }
 
+/**
+ * @brief Set a 24-bit register value.
+ *
+ * @param registerAddress - Address of register to write.
+ * @param value - Value to write.
+ * @return PX4_OK if write operation succeeds, otherwise an error code.
+ */
 int NAU7802::set24BitRegister(uint8_t registerAddress, int32_t value) {
 
 	// Construct a union for conversion between unsigned and signed and fill with value
@@ -435,6 +540,13 @@ int NAU7802::set24BitRegister(uint8_t registerAddress, int32_t value) {
 	return PX4_OK;
 }
 
+/**
+ * @brief Retrieve a 32-bit register value.
+ *
+ * @param registerAddress - Address of register to read.
+ * @param data - Output pointer for register data.
+ * @return PX4_OK if read operation succeeds, otherwise an error code.
+ */
 int NAU7802::get32BitRegister(uint8_t registerAddress, uint32_t *data) {
 	// Send the register address and return 4 byte response
 	uint8_t val[4] = {0,0,0,0};
@@ -456,6 +568,13 @@ int NAU7802::get32BitRegister(uint8_t registerAddress, uint32_t *data) {
 
 }
 
+/**
+ * @brief Set a 32-bit register value.
+ *
+ * @param registerAddress - Address of register to write.
+ * @param value - Value to write.
+ * @return PX4_OK if write operation succeeds, otherwise an error code.
+ */
 int NAU7802::set32BitRegister(uint8_t registerAddress, uint32_t value) {
 	// Fill the command array with the value and send
 	uint8_t cmd[5];
@@ -472,6 +591,13 @@ int NAU7802::set32BitRegister(uint8_t registerAddress, uint32_t value) {
 
 }
 
+/**
+ * @brief Set a specific bit in a register.
+ *
+ * @param bitNumber - Bit position to set.
+ * @param registerAddress - Address of register to modify.
+ * @return PX4_OK if operation succeeds, otherwise an error code.
+ */
 int NAU7802::setBit(uint8_t bitNumber, uint8_t registerAddress) {
 	uint8_t reg = 0;
 	int status = getRegister(registerAddress, &reg);
@@ -484,6 +610,13 @@ int NAU7802::setBit(uint8_t bitNumber, uint8_t registerAddress) {
 	return PX4_OK;
 }
 
+/**
+ * @brief Clear a specific bit in a register.
+ *
+ * @param bitNumber - Bit position to clear.
+ * @param registerAddress - Address of register to modify.
+ * @return PX4_OK if operation succeeds, otherwise an error code.
+ */
 int NAU7802::clearBit(uint8_t bitNumber, uint8_t registerAddress) {
 	uint8_t reg = 0;
 	int status = getRegister(registerAddress, &reg);
@@ -496,6 +629,14 @@ int NAU7802::clearBit(uint8_t bitNumber, uint8_t registerAddress) {
 	return PX4_OK;
 }
 
+/**
+ * @brief Retrieve a specific bit from a register.
+ *
+ * @param bitNumber - Bit position to read.
+ * @param registerAddress - Address of register to read.
+ * @param data - Output pointer for bit value.
+ * @return PX4_OK if read operation succeeds, otherwise an error code.
+ */
 int NAU7802::getBit(uint8_t bitNumber, uint8_t registerAddress, bool *data) {
 	uint8_t reg = 0;
 	int status = getRegister(registerAddress,&reg);
@@ -506,26 +647,3 @@ int NAU7802::getBit(uint8_t bitNumber, uint8_t registerAddress, bool *data) {
 
 	return PX4_OK;
 }
-
-
-// int NAU7802::module_set(const BusCLIArguments &cli, BusInstanceIterator &iterator)
-// {
-// 	bool is_running = false;
-
-// 	while (iterator.next()) {
-// 		if (iterator.instance()) {
-// 			NAU7802 *instance = (NAU7802 *)iterator.instance();
-// 			instance->zeroOffset = cli.zero;
-// 			instance->gainAdj = cli.gain_adj;
-// 			PX4_INFO("Set Zero Offset to %f and Gain Adjustment to %f", instance->_zeroOffset, instance->gainAdj);
-// 			is_running = true;
-// 		}
-// 	}
-
-// 	if (!is_running) {
-// 		PX4_INFO("Not running");
-// 		return -1;
-// 	}
-
-// 	return 0;
-// }

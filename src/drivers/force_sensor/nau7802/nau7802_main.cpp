@@ -34,7 +34,17 @@
 
 #include "NAU7802.hpp"
 
-
+/**
+ * @brief Main entry point for the NAU7802 module.
+ *
+ * This function parses command-line arguments and executes the appropriate
+ * command (start, stop, or status) for the NAU7802 driver. It also sets up
+ * default I2C parameters for communication.
+ *
+ * @param argc Number of arguments.
+ * @param argv Array of argument strings.
+ * @return int Status of the operation. Returns -1 if the command is unrecognized.
+ */
 extern "C" int nau7802_main(int argc, char *argv[])
 {
 	using ThisDriver = NAU7802;
@@ -64,7 +74,12 @@ extern "C" int nau7802_main(int argc, char *argv[])
 	return -1;
 }
 
-
+/**
+ * @brief Print usage instructions for the NAU7802 driver.
+ *
+ * This function outputs a description of the driver and usage information
+ * for the commands that can be executed with the NAU7802 driver.
+ */
 void NAU7802::print_usage()
 {
 	PRINT_MODULE_DESCRIPTION(
@@ -84,7 +99,17 @@ It can be enabled with the "SENS_EN_NAU7802" parameter set to 1.
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 }
 
-
+/**
+ * @brief Instantiate an NAU7802 instance.
+ *
+ * This function allocates and initializes an instance of the NAU7802 driver
+ * with specified bus and communication parameters.
+ *
+ * @param cli Command-line interface arguments specifying configuration.
+ * @param iterator Iterator over bus instances for this driver.
+ * @param runtime_instance Runtime instance number for multiple instances.
+ * @return I2CSPIDriverBase* Pointer to the instantiated driver instance or nullptr if allocation fails.
+ */
 I2CSPIDriverBase *NAU7802::instantiate(const BusCLIArguments &cli, const BusInstanceIterator &iterator,
 				     int runtime_instance)
 {

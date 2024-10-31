@@ -212,6 +212,7 @@ void AdmittanceControlModule::Run()
 		est(3) = math::constrain(((fabsf(wrench.me[2]) > _param_adm_ctr_dzw.get()) ? (wrench.me[2]) : (0.f)), -_param_adm_ctr_saw.get(), _param_adm_ctr_saw.get());
 		meas = -math::constrain(((fabsf(force.force_filtered_n) > _param_adm_ctr_dzx.get()) ? (force.force_filtered_n) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
 
+		// Select where wrenchs are taken from
 		if (_force_source_mix == ForceSourceMix::ESTIMATOR) {
 			We(0) = est(0);
 			We(1) = est(1);
