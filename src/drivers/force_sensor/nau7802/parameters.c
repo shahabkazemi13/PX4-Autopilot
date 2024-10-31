@@ -43,14 +43,14 @@ PARAM_DEFINE_INT32(SENS_EN_NAU7802, 1);
 /**
  * NAU7802 Force Sensor Tare on start
  *
- * @value 0 Tare on start
- * @value 1 Preserve offset between restarts
+ * @value 0 Preserve offset between restarts
+ * @value 1 Tare on start
  *
  * @reboot_required true
  * @group Sensors
  * @boolean
  */
-PARAM_DEFINE_INT32(SENS_NAU_TARE, 0);
+PARAM_DEFINE_INT32(SENS_NAU_TARE, 1);
 
 
 /**

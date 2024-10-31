@@ -64,6 +64,7 @@ NAU7802::NAU7802(I2CSPIBusOption bus_option, const int bus, int bus_frequency, i
  */
 void NAU7802::updateParams() {
 	ModuleParams::updateParams();
+	tare_on_restart = (bool)_param_tare.get();
 	gainAdj = _param_gain.get();
 	zeroOffset = _param_offset.get();
 	measurement_rate_hz = _param_meas_rate.get();
@@ -96,7 +97,8 @@ int NAU7802::init() {
 	if (status != PX4_OK) return status;
 
 	if (tare_on_restart) {
-
+		tare();
+		if (status != PX4_OK) return status;
 	}
 
 	ScheduleNow();
