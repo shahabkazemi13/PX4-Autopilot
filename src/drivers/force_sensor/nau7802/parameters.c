@@ -32,13 +32,25 @@
  ****************************************************************************/
 
 /**
- * NAU7802 force sensor (external I2C)
+ * NAU7802 force sensor enabled (external I2C)
  *
  * @reboot_required true
  * @group Sensors
  * @boolean
  */
 PARAM_DEFINE_INT32(SENS_EN_NAU7802, 1);
+
+/**
+ * NAU7802 Force Sensor Tare on start
+ *
+ * @value 0 Tare on start
+ * @value 1 Preserve offset between restarts
+ *
+ * @reboot_required true
+ * @group Sensors
+ * @boolean
+ */
+PARAM_DEFINE_INT32(SENS_NAU_TARE, 0);
 
 
 /**

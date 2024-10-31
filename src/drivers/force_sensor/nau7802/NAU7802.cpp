@@ -95,6 +95,10 @@ int NAU7802::init() {
 	status = begin();
 	if (status != PX4_OK) return status;
 
+	if (tare_on_restart) {
+
+	}
+
 	ScheduleNow();
 	return PX4_OK;
 }
@@ -207,6 +211,27 @@ int NAU7802::reset() {
 		if (status != PX4_OK) return status;
 
   	return PX4_OK;
+}
+
+
+int NAU7802::tare() {
+
+	float sum_readings = 0;
+	int status;
+
+	// Gets the time and takes a reading
+	for (size_t i = 0; i < NUM_TARE_READINGS; i++) {
+		int32_t reading = 0;
+		status = getReading(&reading);
+
+		// Applies the gain, offset and low-pass filter
+		sum_readings += reading/128.0f*gainAdj;
+		if (status != PX4_OK) return status;
+	}
+
+	zeroOffset = -(sum_readings / NUM_TARE_READINGS);
+
+	return PX4_OK;
 }
 
 /**

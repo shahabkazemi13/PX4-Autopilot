@@ -219,9 +219,9 @@ typedef enum
 /* Configuration Constants */
 static constexpr uint8_t I2C_ADDRESS_DEFAULT = 0x2A; /* 0x2A */
 static constexpr uint32_t I2C_SPEED = 100000; // 100 kHz I2C serial interface
+static constexpr uint32_t NUM_TARE_READINGS = 10;
 
 // using namespace time_literals;
-
 
 class NAU7802 : public device::I2C, public I2CSPIDriver<NAU7802>, public ModuleParams{
 public:
@@ -248,10 +248,11 @@ private:
 
   float measurement_rate_hz = 200;
   math::LowPassFilter2p<float> _lpf{200, 10.f};
-
+  bool tare_on_restart = true;
 
 
   DEFINE_PARAMETERS(
+    (ParamInt<px4::params::SENS_NAU_TARE>) _param_tare,
     (ParamFloat<px4::params::SENS_NAU_GAIN>) _param_gain,
     (ParamFloat<px4::params::SENS_NAU_ZERO>) _param_offset,
     (ParamFloat<px4::params::SENS_NAU_RATE>) _param_meas_rate,
@@ -269,6 +270,7 @@ private:
 	// Functions
   int begin(); //Check communication and initialize sensor
   int reset(); //Resets all registers to Power Of Defaults
+  int tare();  //Tares the zero_offset value to zero
   int powerUp();   //Power up digital and analog sections of scale, ~2mA
 	int getRevisionCode(uint8_t *code);
 
