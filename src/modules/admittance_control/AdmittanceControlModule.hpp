@@ -60,9 +60,17 @@
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/vehicle_local_position_setpoint.h>
 #include <uORB/topics/rls_wrench_estimator.h>
+#include <uORB/topics/force_sensor.h>
 #include <uORB/topics/debug_vect.h>
 
 using namespace time_literals;
+
+enum ForceSourceMix {
+	ESTIMATOR = 0,
+	MIXED = 1,
+	MEASUREMENT = 2,
+	NONE = 3,
+};
 
 class AdmittanceControlModule : public ModuleBase<AdmittanceControlModule>, public ModuleParams, public px4::ScheduledWorkItem
 {
@@ -86,7 +94,7 @@ public:
 private:
 	void Run() override;
 	void updateParams() override;
-	bool copyAndCheckAllFinite(rls_wrench_estimator_s &wrench, actuator_outputs_s &actuator_outputs,
+	bool copyAndCheckAllFinite(rls_wrench_estimator_s &wrench, force_sensor_s &force, actuator_outputs_s &actuator_outputs,
 					vehicle_attitude_setpoint_s &v_att_sp, vehicle_local_position_setpoint_s &setpoint);
 
 
@@ -97,7 +105,9 @@ private:
 	uORB::Publication<vehicle_local_position_setpoint_s> _admittance_setpoint_pub{ORB_ID(admittance_setpoint)};
 
 	// Subscriptions
-	uORB::SubscriptionCallbackWorkItem _rls_wrench_estimator_sub{this, ORB_ID(rls_wrench_estimator)};        // subscription that schedules AdmittanceControlModule when updated
+	uORB::SubscriptionCallbackWorkItem _rls_wrench_estimator_sub{this, ORB_ID(rls_wrench_estimator)};       // one of the subscriptions that schedules AdmittanceControlModule when updated
+	uORB::SubscriptionCallbackWorkItem _force_measurement_sub{this, ORB_ID(force_sensor)};        		// one of the subscriptions that schedules AdmittanceControlModule when updated
+
 
 	uORB::SubscriptionInterval  _parameter_update_sub{ORB_ID(parameter_update), 1_s}; // subscription limited to 1 Hz updates
 	uORB::Subscription _vehicle_attitude_setpoint_sub{ORB_ID(vehicle_attitude_setpoint)};
@@ -163,9 +173,13 @@ private:
 		(ParamFloat<px4::params::ADM_CTR_WRE_SAX>) _param_adm_ctr_sax,
 		(ParamFloat<px4::params::ADM_CTR_WRE_SAY>) _param_adm_ctr_say,
 		(ParamFloat<px4::params::ADM_CTR_WRE_SAZ>) _param_adm_ctr_saz,
-		(ParamFloat<px4::params::ADM_CTR_WRE_SAW>) _param_adm_ctr_saw
+		(ParamFloat<px4::params::ADM_CTR_WRE_SAW>) _param_adm_ctr_saw,
+
+
+		(ParamInt<px4::params::ADM_CTR_EN_FMEA>) _param_adm_ctr_fsource_mix
 	)
 
+	ForceSourceMix _force_source_mix{ForceSourceMix::ESTIMATOR};
 	bool _finite{false};
 	bool _valid{false};
 	bool _sp_updated{false};

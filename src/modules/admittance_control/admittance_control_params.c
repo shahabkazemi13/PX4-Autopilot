@@ -459,3 +459,17 @@ PARAM_DEFINE_FLOAT(ADM_CTR_WRE_SAZ, 15.f);
  * @group Admittance Control
  */
 PARAM_DEFINE_FLOAT(ADM_CTR_WRE_SAW, 0.5f);
+
+/**
+ * Select Force Data Source
+ *
+ * @value 0 Wrench Estimator Only
+ * @value 1 Mixed Wrench Estimator and Force Measurements
+ * @value 2 Force Measurements Only
+ * @value 3 No Inputs
+ *
+ * @reboot_required true
+ * @group Admittance Control
+ */
+PARAM_DEFINE_INT32(ADM_CTR_EN_FMEA, 0);
+

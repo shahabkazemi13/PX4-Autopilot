@@ -54,14 +54,25 @@ AdmittanceControlModule::~AdmittanceControlModule()
 
 bool AdmittanceControlModule::init()
 {
-	// execute Run() on every rls_wrench_estimator publication
-	if (!_rls_wrench_estimator_sub.registerCallback()) {
-		PX4_ERR("rls_wrench_estimator callback registration failed");
-		return false;
-	}
+	if (_force_source_mix == ForceSourceMix::MEASUREMENT){
+		// execute Run() on every force_sensor publication
+		if (!_force_measurement_sub.registerCallback()) {
+			PX4_ERR("force_sensor callback registration failed");
+			return false;
+		}
 
-	//limit to 100Hz
-	_rls_wrench_estimator_sub.set_interval_us(10_ms);
+		//limit to 100Hz
+		_force_measurement_sub.set_interval_us(10_ms);
+	} else {
+		// execute Run() on every rls_wrench_estimator publication
+		if (!_rls_wrench_estimator_sub.registerCallback()) {
+			PX4_ERR("rls_wrench_estimator callback registration failed");
+			return false;
+		}
+
+		//limit to 100Hz
+		_rls_wrench_estimator_sub.set_interval_us(10_ms);
+	}
 
 	return true;
 }
@@ -114,6 +125,8 @@ void AdmittanceControlModule::updateParams()
 
 	params_bell.lpf_sat_factor = _param_adm_ctr_lpf.get();
 
+	_force_source_mix = ForceSourceMix(_param_adm_ctr_fsource_mix.get());
+
 
 	_control.initialize(params_bell);
 }
@@ -126,7 +139,7 @@ void AdmittanceControlModule::Run()
 		return;
 	}
 
-	if (!_rls_wrench_estimator_sub.updated()) {
+	if ((!_rls_wrench_estimator_sub.updated()) && (!_force_measurement_sub.updated())) {
 		return;
 	}
 
@@ -148,6 +161,7 @@ void AdmittanceControlModule::Run()
 	perf_begin(_cycle_perf);
 
 	rls_wrench_estimator_s wrench;
+	force_sensor_s force;
 	actuator_outputs_s actuator_outputs;
 	vehicle_attitude_setpoint_s v_att_sp;
 	vehicle_local_position_setpoint_s setpoint;
@@ -155,10 +169,18 @@ void AdmittanceControlModule::Run()
 
 	_sp_updated = _trajectory_setpoint_sub.updated();
 
-	_finite = copyAndCheckAllFinite(wrench, actuator_outputs, v_att_sp, setpoint);
+	_finite = copyAndCheckAllFinite(wrench, force, actuator_outputs, v_att_sp, setpoint);
 
-	const float dt = (wrench.timestamp - _timestamp_last) * 1e-6f;
-	_timestamp_last = wrench.timestamp;
+
+	float dt = 0;
+	if (_force_source_mix == ForceSourceMix::MEASUREMENT) {
+		dt = (force.timestamp - _timestamp_last) * 1e-6f;
+		_timestamp_last = force.timestamp;
+	} else {
+		dt = (wrench.timestamp - _timestamp_last) * 1e-6f;
+		_timestamp_last = wrench.timestamp;
+	}
+
 
 	vehicle_local_position_setpoint_s admittance_sp{};
 
@@ -181,12 +203,37 @@ void AdmittanceControlModule::Run()
 	if (_finite && _admittance_flag && (dt > 0.001f) && (dt < 1.f)) {
 
 		Vector<float, 4> We = zeros<float, 4, 1>();
-
+		Vector<float, 4> est = zeros<float, 4, 1>();
+		float meas = 0;
 		// //Saturate and Deadzone
-		We(0) = math::constrain(((fabsf(wrench.fe[0]) > _param_adm_ctr_dzx.get()) ? (wrench.fe[0]) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
-		We(1) = math::constrain(((fabsf(wrench.fe[1]) > _param_adm_ctr_dzy.get()) ? (wrench.fe[1]) : (0.f)), -_param_adm_ctr_say.get(), _param_adm_ctr_say.get());
-		We(2) = math::constrain(((fabsf(wrench.fe[2]) > _param_adm_ctr_dzz.get()) ? (wrench.fe[2]) : (0.f)), -_param_adm_ctr_saz.get(), _param_adm_ctr_saz.get());
-		We(3) = math::constrain(((fabsf(wrench.me[2]) > _param_adm_ctr_dzw.get()) ? (wrench.me[2]) : (0.f)), -_param_adm_ctr_saw.get(), _param_adm_ctr_saw.get());
+		est(0) = math::constrain(((fabsf(wrench.fe[0]) > _param_adm_ctr_dzx.get()) ? (wrench.fe[0]) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
+		est(1) = math::constrain(((fabsf(wrench.fe[1]) > _param_adm_ctr_dzy.get()) ? (wrench.fe[1]) : (0.f)), -_param_adm_ctr_say.get(), _param_adm_ctr_say.get());
+		est(2) = math::constrain(((fabsf(wrench.fe[2]) > _param_adm_ctr_dzz.get()) ? (wrench.fe[2]) : (0.f)), -_param_adm_ctr_saz.get(), _param_adm_ctr_saz.get());
+		est(3) = math::constrain(((fabsf(wrench.me[2]) > _param_adm_ctr_dzw.get()) ? (wrench.me[2]) : (0.f)), -_param_adm_ctr_saw.get(), _param_adm_ctr_saw.get());
+		meas = -math::constrain(((fabsf(force.force_filtered_n) > _param_adm_ctr_dzx.get()) ? (force.force_filtered_n) : (0.f)), -_param_adm_ctr_sax.get(), _param_adm_ctr_sax.get());
+
+		// Select where wrenchs are taken from
+		if (_force_source_mix == ForceSourceMix::ESTIMATOR) {
+			We(0) = est(0);
+			We(1) = est(1);
+			We(2) = est(2);
+			We(3) = est(3);
+		} else if (_force_source_mix == ForceSourceMix::MIXED) {
+			We(0) = meas;
+			We(1) = est(1);
+			We(2) = est(2);
+			We(3) = est(3);
+		} else if (_force_source_mix == ForceSourceMix::MEASUREMENT) {
+			We(0) = meas;
+			We(1) = 0;
+			We(2) = 0;
+			We(3) = 0;
+		} else if (_force_source_mix == ForceSourceMix::NONE) {
+			We(0) = 0;
+			We(1) = 0;
+			We(2) = 0;
+			We(3) = 0;
+		}
 
 		float pwm[8] = {
 			actuator_outputs.output[0],
@@ -233,7 +280,7 @@ void AdmittanceControlModule::Run()
 
 }
 
-bool AdmittanceControlModule::copyAndCheckAllFinite(rls_wrench_estimator_s &wrench, actuator_outputs_s &actuator_outputs,
+bool AdmittanceControlModule::copyAndCheckAllFinite(rls_wrench_estimator_s &wrench, force_sensor_s &force, actuator_outputs_s &actuator_outputs,
 						vehicle_attitude_setpoint_s &v_att_sp, vehicle_local_position_setpoint_s &sp)
 {
 
@@ -242,6 +289,12 @@ bool AdmittanceControlModule::copyAndCheckAllFinite(rls_wrench_estimator_s &wren
 	if (!(PX4_ISFINITE(wrench.fe[0]) && PX4_ISFINITE(wrench.fe[1]) && PX4_ISFINITE(wrench.fe[2])
 		&& PX4_ISFINITE(wrench.me[0]) && PX4_ISFINITE(wrench.me[1]) && PX4_ISFINITE(wrench.me[2]))) {
 
+		return false;
+	}
+
+	_force_measurement_sub.copy(&force);
+
+	if (!(PX4_ISFINITE(force.force_filtered_n))) {
 		return false;
 	}
 
