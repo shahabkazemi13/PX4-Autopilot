@@ -111,6 +111,8 @@
 #include "streams/VFR_HUD.hpp"
 #include "streams/VIBRATION.hpp"
 #include "streams/WIND_COV.hpp"
+#include "streams/MAVLINK_STREAM_LOADCELL.hpp"  // Include your load cell stream header
+
 
 #if !defined(CONSTRAINED_FLASH)
 # include "streams/ADSB_VEHICLE.hpp"
@@ -324,6 +326,10 @@ static const StreamListItem streams_list[] = {
 #if defined(COMMAND_LONG_HPP)
 	create_stream_list_item<MavlinkStreamCommandLong>(),
 #endif // COMMAND_LONG_HPP
+// Add the load cell stream entry
+#if defined(LOADCELL_HPP)  // Only if LOADCELL_HPP is defined
+    create_stream_list_item<MavlinkStreamLoadcell>(),
+#endif // LOADCELL_HPP
 #if defined(SYSTEM_TIME_HPP)
 	create_stream_list_item<MavlinkStreamSysStatus>(),
 #endif // SYSTEM_TIME_HPP

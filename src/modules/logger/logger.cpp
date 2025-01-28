@@ -63,6 +63,7 @@
 #include <systemlib/mavlink_log.h>
 #include <replay/definitions.hpp>
 #include <version/version.h>
+#include <uORB/topics/loadcell.h>
 
 //#define DBGPRINT //write status output every few seconds
 

@@ -43,6 +43,7 @@ px4_add_module(
 		#-DDEBUG_BUILD
 	INCLUDES
 		${PX4_SOURCE_DIR}/mavlink/include/mavlink
+		${CMAKE_CURRENT_SOURCE_DIR}/streams
 	SRCS
 		mavlink.c
 		mavlink_command_sender.cpp
@@ -60,6 +61,7 @@ px4_add_module(
 		mavlink_timesync.cpp
 		mavlink_ulog.cpp
 		tune_publisher.cpp
+		streams/mavlink_stream_loadcell.cpp
 	MODULE_CONFIG
 		module.yaml
 	DEPENDS

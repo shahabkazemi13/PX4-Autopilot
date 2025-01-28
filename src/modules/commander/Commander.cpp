@@ -76,6 +76,12 @@
 
 #include <uORB/topics/mavlink_log.h>
 
+#include <drivers/drv_hrt.h>
+#include <px4_platform_common/param.h>
+#include <px4_platform_common/module.h>
+#include <loadcell_driver/loadcell_driver.hpp> // Include the load cell driver header
+
+
 typedef enum VEHICLE_MODE_FLAG {
 	VEHICLE_MODE_FLAG_CUSTOM_MODE_ENABLED = 1, /* 0b00000001 Reserved for future use. | */
 	VEHICLE_MODE_FLAG_TEST_ENABLED = 2, /* 0b00000010 system has a test mode enabled. This flag is intended for temporary system tests and should not be used for stable implementations. | */
@@ -1517,6 +1523,30 @@ Commander::isGPosGoodForInitializingHomePos(const vehicle_global_position_s &gpo
 	return (gpos.eph <= _param_com_home_h_t.get())
 	       && (gpos.epv <= _param_com_home_v_t.get());
 }
+
+void commander::init_loadcell()
+{
+    int baudrate = 0;
+    char serial_device[100];
+
+    // Retrieve load cell configuration from parameters
+    param_get(param_find("LOADCELL_BAUDRATE"), &baudrate);
+    param_get(param_find("LOADCELL_SERIAL_DEVICE"), serial_device);
+
+    // Initialize the load cell
+    LoadcellDriver::init(serial_device, baudrate);
+}
+
+void commander::run()
+{
+    // Other initialization tasks
+
+    // Initialize load cell
+    init_loadcell();
+
+    // Rest of the commander loop
+}
+
 
 void
 Commander::fillLocalHomePos(home_position_s &home, const vehicle_local_position_s &lpos) const

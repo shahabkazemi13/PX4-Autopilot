@@ -430,6 +430,15 @@ else
 		# Must be started after the serial config is read
 		rc_input start $RC_INPUT_ARGS
 	fi
+        # Add the load cell initialization during startup
+
+        if param compare LOADCELL_ENABLE 1
+        then
+        loadcell start -d /dev/ttyS2 -b 9600
+        fi
+
+
+
 
 	#
 	# Configure vehicle type specific parameters.
