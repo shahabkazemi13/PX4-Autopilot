@@ -39,6 +39,28 @@
  * @author Pedro Mendes <pmen817@aucklanduni.ac.nz>
  */
 
+
+/**
+ * Activate Admitnace (1 for activated )
+ *
+ * @decimal 0
+ * @min 0
+ * @max 1
+ * @group Admittance Control
+ */
+PARAM_DEFINE_FLOAT(ADM_MOD_ACTIVE, 0);
+
+/**
+ * Admitnace Force Start
+ *
+ * @decimal 0
+ * @min 0
+ * @max 1
+ * @group Admittance Control
+ */
+PARAM_DEFINE_FLOAT(ADM_FORCE_START, 0);
+
+
 /**
  * Ax Bell Curve
  *

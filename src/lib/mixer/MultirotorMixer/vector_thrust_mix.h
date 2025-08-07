@@ -30,7 +30,7 @@ constexpr VectorThrustMix multirotor_vt_config[] = {   //add a line for each mot
 	{  -3.328559f, +1.378734f},	//Motor 3
 	{  -1.378734f,  -3.328559f},	//Motor 4
 	{ +1.378734f,  +3.328559f},	//Motor 5
-	{  +3.328559f, -1.378734f},	//Motor 6
+	{  +3.328559f, -1.378734},	//Motor 6
 	{ -3.328559f, -1.378734f},	//Motor 7
 	{ +3.328559f,  +1.378734f},	//Motor 8
 	// modified by skaz344

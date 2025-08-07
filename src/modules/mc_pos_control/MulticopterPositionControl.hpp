@@ -105,7 +105,7 @@ private:
 
 	uORB::Subscription _control_mode_sub{ORB_ID(vehicle_control_mode)};
 	uORB::Subscription _hover_thrust_estimate_sub{ORB_ID(hover_thrust_estimate)};
-	// uORB::Subscription _trajectory_setpoint_sub{ORB_ID(trajectory_setpoint)}; //Using admittance module
+	uORB::Subscription _trajectory_setpoint_sub{ORB_ID(trajectory_setpoint)}; //Using admittance module
 	uORB::Subscription _vehicle_land_detected_sub{ORB_ID(vehicle_land_detected)};
 	uORB::Subscription _vehicle_constraints_sub{ORB_ID(vehicle_constraints)};
 	uORB::Subscription _admittance_setpoint_sub{ORB_ID(admittance_setpoint)};
@@ -177,6 +177,10 @@ private:
 		(ParamFloat<px4::params::MPC_JERK_MAX>) _param_mpc_jerk_max,
 		(ParamFloat<px4::params::MPC_MAN_Y_MAX>) _param_mpc_man_y_max,
 		(ParamFloat<px4::params::MPC_MAN_Y_TAU>) _param_mpc_man_y_tau,
+
+
+		(ParamFloat<px4::params::ADM_MOD_ACTIVE>) _param_adm_mod_active,
+
 
 		(ParamFloat<px4::params::MPC_XY_VEL_ALL>) _param_mpc_xy_vel_all,
 		(ParamFloat<px4::params::MPC_Z_VEL_ALL>) _param_mpc_z_vel_all,

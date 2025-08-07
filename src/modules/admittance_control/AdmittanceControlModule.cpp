@@ -199,6 +199,10 @@ void AdmittanceControlModule::Run()
 		_target_dist = 99;
 	}
 
+
+	_admittance_flag= _admittance_flag || (_param_adm_force_start.get()>0.5f);
+
+
 	// Guard against too small (< 1ms) and too large (> 1000ms) dt's.
 	if (_finite && _admittance_flag && (dt > 0.001f) && (dt < 1.f)) {
 

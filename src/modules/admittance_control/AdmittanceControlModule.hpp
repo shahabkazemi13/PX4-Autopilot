@@ -175,6 +175,8 @@ private:
 		(ParamFloat<px4::params::ADM_CTR_WRE_SAZ>) _param_adm_ctr_saz,
 		(ParamFloat<px4::params::ADM_CTR_WRE_SAW>) _param_adm_ctr_saw,
 
+		(ParamFloat<px4::params::ADM_FORCE_START>) _param_adm_force_start,
+
 
 		(ParamInt<px4::params::ADM_CTR_EN_FMEA>) _param_adm_ctr_fsource_mix
 	)
